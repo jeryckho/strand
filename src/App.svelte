@@ -9,6 +9,7 @@
 	const routes = {
 		"/": Home,
 		"/Node/:id": Node,
+		"*": Home
 	};
 
 	const Start = async () => {

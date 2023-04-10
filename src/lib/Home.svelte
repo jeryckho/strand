@@ -101,7 +101,7 @@
 										><i class="fa fa-eye" /></a
 									>
 									<button
-										class="button is-secondary is-small is-responsive is-rounded"
+										class="button is-danger is-light is-small is-responsive is-rounded"
 										on:click={() => delNode(node.id)}
 										><i class="fa fa-trash" /></button
 									>
@@ -122,7 +122,7 @@
 							<input
 								class="input"
 								type="text"
-								placeholder="Find a Name"
+								placeholder="Node name"
 								name="name"
 								value=""
 							/>

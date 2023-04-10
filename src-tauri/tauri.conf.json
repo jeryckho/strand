@@ -7,7 +7,7 @@
     "withGlobalTauri": false
   },
   "package": {
-    "productName": "strand",
+    "productName": "Strand",
     "version": "0.1.0"
   },
   "tauri": {
@@ -48,7 +48,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "strand",
+        "title": "Strand",
         "width": 800,
         "height": 600
       }
