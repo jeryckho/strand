@@ -1,28 +1,19 @@
 <script>
-	import { JSONEditor } from "svelte-jsoneditor";
 	import { warn, error } from "tauri-plugin-log-api";
+	import Editor from "../components/Editor.svelte";
+	import { ask } from "@tauri-apps/api/dialog";
 	import { db } from "../stores/store";
 	export let params = {};
-	let data = { id: "?", node: {}, edges: { in: [], out: [] }, targets: [] };
+	let data = { id: "?", node: {}, edges: [], targets: [] };
 
 	let loading = false;
 
-	async function handleChange(
-		updatedContent,
-		previousContent,
-		{ contentErrors }
-	) {
-		if (!contentErrors) {
-			const content =
-				updatedContent.text !== undefined
-					? updatedContent.text
-					: JSON.stringify(updatedContent.json);
-			if (content) {
-				await $db.execute("UPDATE nodes SET body = json(?) WHERE id = ?", [
-					content,
-					data.id,
-				]);
-			}
+	async function handleChange({detail}) {
+		if (detail?.content) {
+			await $db.execute(
+				"UPDATE nodes SET body = json(?) WHERE id = ?",
+				[detail.content, data.id]
+			);
 		}
 	}
 
@@ -34,12 +25,12 @@
 		}
 		target.reset();
 
-		const origIn = data.edges.in;
+		const origIn = data.edges;
 		const origT = data.targets;
 		try {
-			data.edges.in = [
-				...data.edges.in,
-				{ source: params.id, target: frm.name, properties: 0 },
+			data.edges = [
+				...data.edges,
+				{ source: params.id, target: frm.name, properties: 0, out: true },
 			];
 			data.targets = data.targets.filter((v) => v !== frm.name);
 			await $db.execute("INSERT INTO edges VALUES(?, ?, json(?))", [
@@ -49,8 +40,35 @@
 			]);
 		} catch (err) {
 			error(err);
-			data.edges.in = origIn;
+			data.edges = origIn;
 			data.targets = origT;
+		}
+	};
+
+	const delEdge = async (edge) => {
+		const confirm = await ask("Are you sure ?", {
+			title: "Tauri",
+			type: "warning",
+		});
+		if (confirm) {
+			const origIn = data.edges;
+			const origT = data.targets;
+			try {
+				data.edges = data.edges.filter(
+					(e) => !(e.source == edge.source && e.target == edge.target)
+				);
+				if (edge.out) {
+					data.targets = [...data.targets, edge.target];
+				}
+				await $db.execute(
+					"DELETE FROM edges WHERE source = ? AND target = ?",
+					[edge.source, edge.target]
+				);
+			} catch (err) {
+				error(err);
+				data.edges = origIn;
+				data.targets = origT;
+			}
 		}
 	};
 
@@ -60,24 +78,26 @@
 				"SELECT * FROM edges WHERE source LIKE ? OR target LIKE ?",
 				[params.id, params.id]
 			)
-		)?.reduce(
-			(acc, current) => {
-				current.properties = Object.keys(
-					JSON.parse(current.properties)
-				).length;
-				if (current.source === params.id) acc.in.push(current);
-				else acc.out.push(current);
-				return acc;
-			},
-			{ in: [], out: [] }
-		);
+		)?.reduce((acc, current) => {
+			current.properties = Object.keys(
+				JSON.parse(current.properties)
+			).length;
+			current.out = current.source === params.id;
+			acc.push(current);
+			return acc;
+		}, []);
 		warn(JSON.stringify(edges));
 		const node = await $db.select(
 			"SELECT id, body FROM nodes WHERE id LIKE ?",
 			[params.id]
 		);
 		warn(JSON.stringify(node));
-		const doneTargets = edges.in.map((v) => v.target);
+		const doneTargets = edges?.reduce((acc, current) => {
+			if (current.out) {
+				acc.push(current.target);
+			}
+			return acc;
+		}, []);
 		const targets = (await $db.select("SELECT id FROM nodes"))?.reduce(
 			(acc, current) => {
 				if (!doneTargets.includes(current.id)) acc.push(current.id);
@@ -108,12 +128,7 @@
 				/>
 			</p>
 			<div class="panel-block">
-				<div class="editor">
-					<JSONEditor
-						content={{ text: data.node?.body, json: undefined }}
-						onChange={handleChange}
-					/>
-				</div>
+				<Editor jsonText={data.node?.body} on:change={handleChange} />
 			</div>
 		</nav>
 	</div>
@@ -131,53 +146,36 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.edges.in as edge}
+						{#each data.edges as edge}
 							<tr>
 								<td>
 									<a
-										href="#/Node/{edge.target}"
+										href="#/Node/{edge.out
+											? edge.target
+											: edge.source}"
 										class="button is-info is-small is-responsive is-rounded"
-										><i class="fa fa-arrow-right" /></a
-									></td
-								>
-								<td>{edge.target}</td>
-								<td>{edge.properties}</td>
-								<td>
-									<a
-									href="#/Edge/{edge.source}/{edge.target}"
-									class="button is-primary is-small is-responsive is-rounded"
-									><i class="fa fa-eye" /></a
-								>
-								<button
-									class="button is-danger is-light is-small is-responsive is-rounded"
-									on:click={() => {}}
-									><i class="fa fa-trash" /></button
-								>
+										class:is-light={!edge.out}
+									>
+										<i
+											class={edge.out
+												? "fa fa-arrow-right"
+												: "fa fa-arrow-left"}
+										/>
+									</a>
 								</td>
-							</tr>
-						{/each}
-						{#each data.edges.out as edge}
-							<tr>
-								<td
-									><a
-										href="#/Node/{edge.source}"
-										class="button is-info is-light is-small is-responsive is-rounded"
-										><i class="fa fa-arrow-left" /></a
-									></td
-								>
-								<td>{edge.source}</td>
+								<td>{edge.out ? edge.target : edge.source}</td>
 								<td>{edge.properties}</td>
 								<td>
 									<a
-									href="#/Edge/{edge.source}/{edge.target}"
-									class="button is-primary is-small is-responsive is-rounded"
-									><i class="fa fa-eye" /></a
-								>
-								<button
-									class="button is-danger is-light is-small is-responsive is-rounded"
-									on:click={() => {}}
-									><i class="fa fa-trash" /></button
-								>
+										href="#/Edge/{edge.source}/{edge.target}"
+										class="button is-primary is-small is-responsive is-rounded"
+										><i class="fa fa-eye" /></a
+									>
+									<button
+										class="button is-danger is-light is-small is-responsive is-rounded"
+										on:click={() => delEdge(edge)}
+										><i class="fa fa-trash" /></button
+									>
 								</td>
 							</tr>
 						{/each}
@@ -213,10 +211,3 @@
 		</nav>
 	</div>
 </div>
-
-<style>
-	.editor {
-		width: 100%;
-		height: 400px;
-	}
-</style>
