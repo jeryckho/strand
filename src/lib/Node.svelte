@@ -2,6 +2,7 @@
 	import { warn, error } from "tauri-plugin-log-api";
 	import Editor from "../components/Editor.svelte";
 	import { ask } from "@tauri-apps/api/dialog";
+	import Typeahead from "svelte-typeahead";
 	import { db } from "../stores/store";
 	export let params = {};
 	let data = { id: "?", node: {}, edges: [], targets: [] };
@@ -17,25 +18,18 @@
 		}
 	}
 
-	const addEdge = async ({ target }) => {
-		const formData = new FormData(target);
-		let frm = {};
-		for (let [key, value] of formData) {
-			frm[key] = value;
-		}
-		target.reset();
-
+	const addEdge = async (name) => {
 		const origIn = data.edges;
 		const origT = data.targets;
 		try {
 			data.edges = [
 				...data.edges,
-				{ source: params.id, target: frm.name, properties: 0, out: true },
+				{ source: params.id, target: name, properties: 0, out: true },
 			];
-			data.targets = data.targets.filter((v) => v !== frm.name);
+			data.targets = data.targets.filter((v) => v !== name);
 			await $db.execute("INSERT INTO edges VALUES(?, ?, json(?))", [
 				params.id,
-				frm.name,
+				name,
 				"{}",
 			]);
 		} catch (err) {
@@ -184,26 +178,18 @@
 			</div>
 			{#if data.targets?.length}
 				<div class="panel-block">
-					<form
-						method="post"
-						action="/api/node"
-						on:submit|preventDefault={addEdge}
-					>
+					<form method="post" action="/api/node">
 						<div class="field has-addons">
-							<div class="select">
-								<select name="name">
-									{#each data.targets as target}
-										<option value={target}>
-											{target}
-										</option>
-									{/each}
-								</select>
-							</div>
-							<div class="control">
-								<button class="button is-info" type="submit">
-									Add
-								</button>
-							</div>
+							<Typeahead
+								class="input"
+								name="name"
+								label="Nodes"
+								hideLabel
+								showDropdownOnFocus
+								inputAfterSelect="clear"
+								data={data.targets}
+								on:select={({ detail }) => { addEdge(detail.selected) }}
+							/>
 						</div>
 					</form>
 				</div>

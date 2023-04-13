@@ -3,6 +3,7 @@
 	const dispatch = createEventDispatcher();
 	import { JSONEditor } from "svelte-jsoneditor";
 	export let jsonText = "{}";
+	export let readOnly = false;
 
 	function handleChange(updatedContent, previousContent, { contentErrors }) {
 		if (!contentErrors) {
@@ -21,6 +22,7 @@
 	<JSONEditor
 		content={{ text: jsonText, json: undefined }}
 		onChange={handleChange}
+		{readOnly}
 	/>
 </div>
 
