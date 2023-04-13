@@ -4,12 +4,14 @@
 	import Router from "svelte-spa-router";
 	import Home from "./lib/Home.svelte";
 	import Node from "./lib/Node.svelte";
+	import Edge from "./lib/Edge.svelte";
 	import { db } from "./stores/store";
 
 	const routes = {
 		"/": Home,
 		"/Node/:id": Node,
-		"*": Home
+		"/Edge/:source/:target": Edge,
+		"*": Home,
 	};
 
 	const Start = async () => {
@@ -42,7 +44,29 @@ CREATE INDEX IF NOT EXISTS target_idx ON edges(target);`);
 	Start();
 </script>
 
-<main class="container">
+<main>
+	<nav class="navbar is-light">
+		<div class="navbar-brand">
+			<a
+				href="#/"
+				role="button"
+				class="navbar-burger"
+				aria-label="menu"
+				aria-expanded="false"
+				data-target="navbarBasicExample"
+			>
+				<span aria-hidden="true" />
+				<span aria-hidden="true" />
+				<span aria-hidden="true" />
+			</a>
+		</div>
+		<div id="navbarBasicExample" class="navbar-menu">
+			<div class="navbar-start">
+				<a class="navbar-item" href="#/"> Nodes </a>
+				<a class="navbar-item" href="#/"> Edges </a>
+			</div>
+		</div>
+	</nav>
 	{#if $db}
 		<Router {routes} />
 	{/if}
