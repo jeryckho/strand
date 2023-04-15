@@ -7,12 +7,11 @@
 
 	const start = async () => {
 		const edges = await $db.select(
-			"SELECT * FROM edges WHERE source LIKE ? OR target LIKE ?",
-			["%", "%"]
+			"SELECT * FROM edges"
 		);
 		info(edges);
 		const nodes = (
-			await $db.select("SELECT id, body FROM nodes WHERE id LIKE ?", ["%"])
+			await $db.select("SELECT id, body FROM nodes")
 		).map(({ id, body }) => ({
 			id,
 			properties: Object.keys(JSON.parse(body)).length,

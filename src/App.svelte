@@ -5,10 +5,12 @@
 	import Home from "./lib/Home.svelte";
 	import Node from "./lib/Node.svelte";
 	import Edge from "./lib/Edge.svelte";
+	import Edges from "./lib/Edges.svelte";
 	import { db } from "./stores/store";
 
 	const routes = {
 		"/": Home,
+		"/Edges": Edges,
 		"/Node/:id": Node,
 		"/Edge/:source/:target": Edge,
 		"*": Home,
@@ -63,7 +65,7 @@ CREATE INDEX IF NOT EXISTS target_idx ON edges(target);`);
 		<div id="navbarBasicExample" class="navbar-menu">
 			<div class="navbar-start">
 				<a class="navbar-item" href="#/"> Nodes </a>
-				<a class="navbar-item" href="#/"> Edges </a>
+				<a class="navbar-item" href="#/Edges"> Edges </a>
 			</div>
 		</div>
 	</nav>
