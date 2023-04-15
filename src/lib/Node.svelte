@@ -7,7 +7,7 @@
 	export let params = {};
 	let data = { id: "?", node: {}, edges: [], targets: [] };
 
-	let loading = false;
+	let all = false;
 
 	async function handleChange({detail}) {
 		if (detail?.content) {
@@ -115,11 +115,10 @@
 			<p class="panel-heading">
 				Node &lt;{data.id}&gt;
 				<a
-					class="delete is-pulled-right"
-					class:is-loading={loading}
 					href="#/"
-					aria-label="close"
-				/>
+					class="button is-primary is-small is-responsive is-rounded is-pulled-right"
+					><i class="fa fa-reply" /></a
+				>
 			</p>
 			<div class="panel-block">
 				<Editor jsonText={data.node?.body} on:change={handleChange} />
@@ -128,12 +127,20 @@
 	</div>
 	<div class="column is-half">
 		<nav class="panel">
-			<p class="panel-heading">Nodes</p>
+			<p class="panel-heading">
+				Nodes
+				<button
+					on:click={() => (all = !all)}
+					class="button is-primary is-small is-responsive is-rounded is-pulled-right"
+					><i
+						class={all ? "fa fa-arrow-right" : "fa fa-arrow-left"}
+					/></button
+				>
+			</p>
 			<div class="panel-block">
 				<table class="table is-striped is-fullwidth">
 					<thead>
 						<tr>
-							<th />
 							<th>Node</th>
 							<th>Properties</th>
 							<th>Actions</th>
@@ -141,37 +148,29 @@
 					</thead>
 					<tbody>
 						{#each data.edges as edge}
-							<tr>
-								<td>
-									<a
-										href="#/Node/{edge.out
-											? edge.target
-											: edge.source}"
-										class="button is-info is-small is-responsive is-rounded"
-										class:is-light={!edge.out}
-									>
-										<i
-											class={edge.out
-												? "fa fa-arrow-right"
-												: "fa fa-arrow-left"}
-										/>
-									</a>
-								</td>
-								<td>{edge.out ? edge.target : edge.source}</td>
-								<td>{edge.properties}</td>
-								<td>
-									<a
-										href="#/Edge/{edge.source}/{edge.target}"
-										class="button is-primary is-small is-responsive is-rounded"
-										><i class="fa fa-eye" /></a
-									>
-									<button
-										class="button is-danger is-light is-small is-responsive is-rounded"
-										on:click={() => delEdge(edge)}
-										><i class="fa fa-trash" /></button
-									>
-								</td>
-							</tr>
+							{#if all || edge.out}
+								<tr>
+									<td>{edge.out ? edge.target : edge.source}</td>
+									<td>{edge.properties}</td>
+									<td>
+										<a
+											href="#/Edge/{edge.source}/{edge.target}"
+											class="button is-info is-small is-responsive is-rounded"
+											class:is-light={!edge.out}
+											><i
+												class={edge.out
+													? "fa fa-arrow-right"
+													: "fa fa-arrow-left"}
+											/></a
+										>
+										<button
+											class="button is-danger is-light is-small is-responsive is-rounded"
+											on:click={() => delEdge(edge)}
+											><i class="fa fa-trash" /></button
+										>
+									</td>
+								</tr>
+							{/if}
 						{/each}
 					</tbody>
 				</table>
