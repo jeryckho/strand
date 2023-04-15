@@ -2,10 +2,10 @@
 	import { error } from "tauri-plugin-log-api";
 	import Database from "tauri-plugin-sql-api";
 	import Router from "svelte-spa-router";
-	import Home from "./lib/Home.svelte";
-	import Node from "./lib/Node.svelte";
-	import Edge from "./lib/Edge.svelte";
-	import Edges from "./lib/Edges.svelte";
+	import Home from "./routes/Home.svelte";
+	import Node from "./routes/Node.svelte";
+	import Edge from "./routes/Edge.svelte";
+	import Edges from "./routes/Edges.svelte";
 	import { db } from "./stores/store";
 
 	const routes = {
@@ -47,26 +47,10 @@ CREATE INDEX IF NOT EXISTS target_idx ON edges(target);`);
 </script>
 
 <main>
-	<nav class="navbar is-light">
+	<nav class="navbar is-light block">
 		<div class="navbar-brand">
-			<a
-				href="#/"
-				role="button"
-				class="navbar-burger"
-				aria-label="menu"
-				aria-expanded="false"
-				data-target="navbarBasicExample"
-			>
-				<span aria-hidden="true" />
-				<span aria-hidden="true" />
-				<span aria-hidden="true" />
-			</a>
-		</div>
-		<div id="navbarBasicExample" class="navbar-menu">
-			<div class="navbar-start">
-				<a class="navbar-item" href="#/"> Nodes </a>
-				<a class="navbar-item" href="#/Edges"> Edges </a>
-			</div>
+			<a class="navbar-item" href="#/"> Nodes </a>
+			<a class="navbar-item" href="#/Edges"> Edges </a>
 		</div>
 	</nav>
 	{#if $db}
