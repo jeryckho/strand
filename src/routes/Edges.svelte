@@ -3,11 +3,12 @@
 	import { info, error } from "tauri-plugin-log-api";
 	import { ask } from "@tauri-apps/api/dialog";
 	import { db } from "../stores/store";
+	import { AllEdges, DeleteEdge } from "../libs/queries";
 	let data = { edges: [] };
 
 	const start = async () => {
 		const edges = (
-			await $db.select("SELECT * FROM edges")
+			await $db.select(AllEdges)
 		).map(({source, target, properties}) => ({
 			source,
 			target,
@@ -19,7 +20,7 @@
 
 	const delEdge = async (edge) => {
 		const confirm = await ask("Are you sure ?", {
-			title: "Tauri",
+			title: "Strand",
 			type: "warning",
 		});
 		if (confirm) {
@@ -33,7 +34,7 @@
 					data.targets = [...data.targets, edge.target];
 				}
 				await $db.execute(
-					"DELETE FROM edges WHERE source = ? AND target = ?",
+					DeleteEdge,
 					[edge.source, edge.target]
 				);
 			} catch (err) {

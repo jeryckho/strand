@@ -3,15 +3,14 @@
 	import { info, error } from "tauri-plugin-log-api";
 	import { ask } from "@tauri-apps/api/dialog";
 	import { db } from "../stores/store";
+	import { AllEdges, AllNodes, InsertNode, DeleteNode } from "../libs/queries";
 	let data = { nodes: [], edges: [] };
 
 	const start = async () => {
-		const edges = await $db.select(
-			"SELECT * FROM edges"
-		);
+		const edges = await $db.select(AllEdges);
 		info(edges);
 		const nodes = (
-			await $db.select("SELECT id, body FROM nodes")
+			await $db.select(AllNodes)
 		).map(({ id, body }) => ({
 			id,
 			properties: Object.keys(JSON.parse(body)).length,
@@ -37,7 +36,7 @@
 				...data.nodes,
 				{ id: frm.name, properties: 1, edges: 0 },
 			];
-			await $db.execute("INSERT INTO nodes VALUES(json(?))", [
+			await $db.execute(InsertNode, [
 				JSON.stringify(frm),
 			]);
 		} catch (err) {
@@ -48,14 +47,14 @@
 
 	const delNode = async (id) => {
 		const confirm = await ask("Are you sure ?", {
-			title: "Tauri",
+			title: "Strand",
 			type: "warning",
 		});
 		if (confirm) {
 			const orig = data.nodes;
 			try {
 				data.nodes = data.nodes.filter((n) => n.id != id);
-				await $db.execute("DELETE FROM nodes WHERE id = ?", [id]);
+				await $db.execute(DeleteNode, [id]);
 			} catch (err) {
 				error(err);
 				data.nodes = orig;

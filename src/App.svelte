@@ -7,6 +7,7 @@
 	import Edge from "./routes/Edge.svelte";
 	import Edges from "./routes/Edges.svelte";
 	import { db } from "./stores/store";
+	import { Schema } from "./libs/queries";
 
 	const routes = {
 		"/": Home,
@@ -19,23 +20,7 @@
 	const Start = async () => {
 		try {
 			db.set(await Database.load("sqlite:test.db"));
-			await $db.execute(`
-		CREATE TABLE IF NOT EXISTS nodes (
-    body TEXT,
-    id   TEXT GENERATED ALWAYS AS (json_extract(body, '$.name')) VIRTUAL NOT NULL UNIQUE
-);
-CREATE INDEX IF NOT EXISTS id_idx ON nodes(id);
-
-CREATE TABLE IF NOT EXISTS edges (
-    source     TEXT,
-    target     TEXT,
-    properties TEXT,
-    UNIQUE(source, target) ON CONFLICT REPLACE,
-    FOREIGN KEY(source) REFERENCES nodes(id),
-    FOREIGN KEY(target) REFERENCES nodes(id)
-);
-CREATE INDEX IF NOT EXISTS source_idx ON edges(source);
-CREATE INDEX IF NOT EXISTS target_idx ON edges(target);`);
+			await $db.execute(Schema);
 		} catch (err) {
 			error(err);
 		}

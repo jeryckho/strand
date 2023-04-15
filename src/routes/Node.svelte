@@ -4,6 +4,7 @@
 	import { ask } from "@tauri-apps/api/dialog";
 	import Typeahead from "svelte-typeahead";
 	import { db } from "../stores/store";
+	import { UpdateNode, InsertEdge, DeleteEdge, FindNearEdges, FindNode, AllNodes } from "../libs/queries";
 	export let params = {};
 	let data = { id: "?", node: {}, edges: [], targets: [] };
 
@@ -12,7 +13,7 @@
 	async function handleChange({detail}) {
 		if (detail?.content) {
 			await $db.execute(
-				"UPDATE nodes SET body = json(?) WHERE id = ?",
+				UpdateNode,
 				[detail.content, data.id]
 			);
 		}
@@ -27,7 +28,7 @@
 				{ source: params.id, target: name, properties: 0, out: true },
 			];
 			data.targets = data.targets.filter((v) => v !== name);
-			await $db.execute("INSERT INTO edges VALUES(?, ?, json(?))", [
+			await $db.execute(InsertEdge, [
 				params.id,
 				name,
 				"{}",
@@ -41,7 +42,7 @@
 
 	const delEdge = async (edge) => {
 		const confirm = await ask("Are you sure ?", {
-			title: "Tauri",
+			title: "Strand",
 			type: "warning",
 		});
 		if (confirm) {
@@ -55,7 +56,7 @@
 					data.targets = [...data.targets, edge.target];
 				}
 				await $db.execute(
-					"DELETE FROM edges WHERE source = ? AND target = ?",
+					DeleteEdge,
 					[edge.source, edge.target]
 				);
 			} catch (err) {
@@ -69,7 +70,7 @@
 	const Start = async () => {
 		const edges = (
 			await $db.select(
-				"SELECT * FROM edges WHERE source LIKE ? OR target LIKE ?",
+				FindNearEdges,
 				[params.id, params.id]
 			)
 		)?.reduce((acc, current) => {
@@ -82,7 +83,7 @@
 		}, []);
 		warn(JSON.stringify(edges));
 		const node = await $db.select(
-			"SELECT id, body FROM nodes WHERE id LIKE ?",
+			FindNode,
 			[params.id]
 		);
 		warn(JSON.stringify(node));
@@ -92,7 +93,7 @@
 			}
 			return acc;
 		}, []);
-		const targets = (await $db.select("SELECT id FROM nodes"))?.reduce(
+		const targets = (await $db.select(AllNodes))?.reduce(
 			(acc, current) => {
 				if (!doneTargets.includes(current.id)) acc.push(current.id);
 				return acc;

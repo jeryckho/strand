@@ -2,6 +2,7 @@
 	import { warn, error } from "tauri-plugin-log-api";
 	import Editor from "../components/Editor.svelte";
 	import { db } from "../stores/store";
+	import { FindEdge, FindNode, InsertEdge } from "../libs/queries";
 	export let params = {};
 	let data = {
 		id_source: "?",
@@ -14,7 +15,7 @@
 	async function handleChange({ detail }) {
 		if (detail?.content) {
 			warn(detail?.content);
-			await $db.execute("INSERT INTO edges VALUES(?, ?, json(?))", [
+			await $db.execute(InsertEdge, [
 				params.source,
 				params.target,
 				detail.content,
@@ -24,15 +25,15 @@
 
 	const Start = async () => {
 		const source = await $db.select(
-			"SELECT id, body FROM nodes WHERE id LIKE ?",
+			FindNode,
 			[params.source]
 		);
 		const target = await $db.select(
-			"SELECT id, body FROM nodes WHERE id LIKE ?",
+			FindNode,
 			[params.target]
 		);
 		const edge = await $db.select(
-			"SELECT * FROM edges WHERE source = ? AND target = ?",
+			FindEdge,
 			[params.source, params.target]
 		);
 		data = {
