@@ -26,6 +26,8 @@ export const InsertEdge = "INSERT INTO edges VALUES(?, ?, json(?))";
 
 export const DeleteEdge  = "DELETE FROM edges WHERE source = ? AND target = ?";
 
+export const DeleteAllEdges = "DELETE FROM edges";
+
 export const AllNodes = "SELECT * FROM nodes";
 
 export const FindNode = "SELECT id, body FROM nodes WHERE id LIKE ?";
@@ -35,3 +37,5 @@ export const InsertNode = "INSERT INTO nodes VALUES(json(?))";
 export const UpdateNode = "UPDATE nodes SET body = json(?) WHERE id = ?";
 
 export const DeleteNode = "DELETE FROM nodes WHERE id = ?";
+
+export const DeleteAllNodes = "DELETE FROM nodes";

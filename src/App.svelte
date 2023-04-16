@@ -6,12 +6,14 @@
 	import Node from "./routes/Node.svelte";
 	import Edge from "./routes/Edge.svelte";
 	import Edges from "./routes/Edges.svelte";
+	import Import from "./routes/Import.svelte";
 	import { db } from "./stores/store";
 	import { Schema } from "./libs/queries";
 
 	const routes = {
 		"/": Home,
 		"/Edges": Edges,
+		"/Import": Import,
 		"/Node/:id": Node,
 		"/Edge/:source/:target": Edge,
 		"*": Home,
@@ -36,6 +38,7 @@
 		<div class="navbar-brand">
 			<a class="navbar-item" href="#/"> Nodes </a>
 			<a class="navbar-item" href="#/Edges"> Edges </a>
+			<a class="navbar-item" href="#/Import"> Import </a>
 		</div>
 	</nav>
 	{#if $db}
