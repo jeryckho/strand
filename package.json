@@ -1,12 +1,13 @@
 {
   "name": "strand",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "deploy": "git-tree -C -1 -D C:\\Users\\jerome.chery\\Dropbox\\Jey\\Strand\\Deploy\\",
     "tauri": "tauri"
   },
   "dependencies": {
@@ -15,6 +16,7 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.0.0",
     "@tauri-apps/cli": "^1.2.2",
+    "d3": "^7.8.4",
     "svelte": "^3.54.0",
     "svelte-jsoneditor": "^0.16.1",
     "svelte-spa-router": "^3.3.0",

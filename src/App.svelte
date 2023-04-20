@@ -7,6 +7,7 @@
 	import Edge from "./routes/Edge.svelte";
 	import Edges from "./routes/Edges.svelte";
 	import Import from "./routes/Import.svelte";
+	import Graph from "./routes/Graph.svelte";
 	import { db } from "./stores/store";
 	import { Schema } from "./libs/queries";
 
@@ -16,6 +17,7 @@
 		"/Import": Import,
 		"/Node/:id": Node,
 		"/Edge/:source/:target": Edge,
+		"/Graph": Graph,
 		"*": Home,
 	};
 
@@ -38,6 +40,7 @@
 		<div class="navbar-brand">
 			<a class="navbar-item" href="#/"> Nodes </a>
 			<a class="navbar-item" href="#/Edges"> Edges </a>
+			<a class="navbar-item" href="#/Graph"> Graph </a>
 			<a class="navbar-item" href="#/Import"> Import </a>
 		</div>
 	</nav>
