@@ -2,14 +2,50 @@
 	import { onMount } from "svelte";
 	import * as d3 from "d3";
 	import { db } from "../stores/store";
+	import Editor from "../components/Editor.svelte";
 	import { AllEdges, AllNodes, InsertNode, DeleteNode } from "../libs/queries";
 
 	let data = { nodes: [], edges: [] };
 
+	let ClickedNodes = [];
+	let Panels = {
+		LefNode: {},
+		MidEdge: {},
+		RigNode: {}
+	};
+
+	const AddClickedNode = (id) => {
+		ClickedNodes = ([...ClickedNodes, id]).slice(-2);
+		if (ClickedNodes?.[0]) {
+			Panels.LefNode = data.nodes.find(({id}) => id === ClickedNodes[0]);
+		}
+		if (ClickedNodes?.[1]) {
+			Panels.RigNode = data.nodes.find(({id}) => id === ClickedNodes[1]);
+			Panels.MidEdge =  data.edges.find(({source, target}) => source === ClickedNodes[0] && target === ClickedNodes[1]) ?? {};
+		}
+	}
+	const SetClickedEdge = (src, tgt) =>{
+		ClickedNodes = [src, tgt];
+		Panels.LefNode = data.nodes.find(({id}) => id === src);
+		Panels.RigNode = data.nodes.find(({id}) => id === tgt);
+		Panels.MidEdge =  data.edges.find(({source, target}) => source === src && target === tgt);
+	}
+	const EmptyCLickedNodes = () => {
+		ClickedNodes = [];
+		Panels.LefNode = {};
+		Panels.RigNode = {};
+		Panels.MidEdge = {};
+	}
+
 	const start = async () => {
-		const edges = (
-			await $db.select(AllEdges)
-		).map(({ source, target, properties }) => ({ source, target, properties, type: Object.keys(JSON.parse(properties)).length.toString(10) }));
+		const edges = (await $db.select(AllEdges)).map(
+			({ source, target, properties }) => ({
+				source,
+				target,
+				properties,
+				type: Object.keys(JSON.parse(properties)).length.toString(10),
+			})
+		);
 		const nodes = await $db.select(AllNodes);
 		data = { nodes, edges };
 		onResize();
@@ -48,7 +84,21 @@
   `;
 	}
 
-	let forceChart = (data, width, height, location, invalidation) => {
+	function clickLink(e, d) {
+		SetClickedEdge(d.source.id, d.target.id);
+		e.stopPropagation();
+	}
+
+	function clickNode(e, d) {
+		AddClickedNode(d.id);
+		e.stopPropagation();
+	}
+
+	function clickOutside(e, d) {
+		EmptyCLickedNodes();
+	}
+
+	let forceChart = (data, width, height, invalidation) => {
 		const types = Array.from(new Set(data.edges.map((d) => d.type)));
 		const color = d3.scaleOrdinal(types, d3.schemeCategory10);
 		const links = data.edges.map((d) => Object.create(d));
@@ -67,7 +117,8 @@
 		const svg = d3
 			.create("svg")
 			.attr("viewBox", [-width / 2, -height / 2, width, height])
-			.style("font", "12px sans-serif");
+			.style("font", "12px sans-serif")
+			.on("click", clickOutside);
 
 		// Per-type markers, as they don't inherit styles.
 		svg.append("defs")
@@ -92,8 +143,9 @@
 			.selectAll("path")
 			.data(links)
 			.join("path")
+			.on("click", clickLink)
 			.attr("stroke", (d) => color(d.type))
-			.attr("marker-end", d => `url(#arrow-${d.type})`);
+			.attr("marker-end", (d) => `url(#arrow-${d.type})`);
 
 		const node = svg
 			.append("g")
@@ -103,6 +155,7 @@
 			.selectAll("g")
 			.data(nodes)
 			.join("g")
+			.on("click", clickNode)
 			.call(drag(simulation));
 
 		node
@@ -138,26 +191,65 @@
 	let innerHeight;
 
 	function onResize() {
-			innerWidth = window.innerWidth;
-			innerHeight = window.innerHeight;
-			let chart = forceChart(data, innerWidth-100, innerHeight-100, "TEST", null);
-			d3.select(el).selectAll("*").remove();
-			d3.select(el).append(() => chart);
-		}
+		innerWidth = window.innerWidth;
+		innerHeight = window.innerHeight;
+		let chart = forceChart(data, innerWidth - 100, 300, null);
+		d3.select(el).selectAll("*").remove();
+		d3.select(el).append(() => chart);
+	}
 
 	onMount(() => {
 		if ($db) {
 			start();
 		} else {
 			setTimeout(start, 250);
-		}		
+		}
 		window.addEventListener("resize", onResize);
 		return () => window.removeEventListener("resize", onResize);
 	});
 </script>
 
-<div bind:this={el} class="chart" />
-
-<div>
-	Width: {innerWidth}
+<div class="columns">
+	<div class="column is-full">
+		<nav class="panel">
+			<p class="panel-heading">Graph</p>
+			<div bind:this={el} class="panel-block" />
+		</nav>
+	</div>
+</div>
+<div class="columns">
+	<div class="column is-third">
+		{#if Panels.LefNode?.id}
+		<nav class="panel">
+			<p class="panel-heading">
+				Node &lt;{Panels.LefNode.id}&gt;
+			</p>
+			<div class="panel-block">
+				<Editor jsonText={Panels.LefNode?.body} readOnly={true} />
+			</div>
+		</nav>
+		{/if}
+	</div>
+	<div class="column is-third">
+		{#if Panels.MidEdge?.source}
+		<nav class="panel">
+			<p class="panel-heading">Edge &lt;=&gt;</p>
+			<div class="panel-block">
+				<Editor jsonText={ Panels.MidEdge?.properties}  readOnly={true} />
+			</div>
+		</nav>
+		{/if}
+	</div>
+	<div class="column is-third">
+		{#if Panels.RigNode?.id}
+		<nav class="panel">
+			<p class="panel-heading">
+				Node &lt;{Panels.RigNode.id}&gt;
+			</p>
+			<div class="panel-block">
+				<Editor jsonText={Panels.RigNode?.body} readOnly={true} />
+			</div>
+		</nav>
+		{/if}
+	</div>
 </div>
