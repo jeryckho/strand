@@ -118,7 +118,12 @@
 			.create("svg")
 			.attr("viewBox", [-width / 2, -height / 2, width, height])
 			.style("font", "12px sans-serif")
-			.on("click", clickOutside);
+			.on("click", clickOutside)
+			.call(d3.zoom().on("zoom", zoomed));
+
+		function zoomed(e) {
+			svg.attr( "transform", `translate(${e.transform.x},${e.transform.y}) scale(${e.transform.k})` );
+		}
 
 		// Per-type markers, as they don't inherit styles.
 		svg.append("defs")
