@@ -98,6 +98,10 @@
 		EmptyCLickedNodes();
 	}
 
+	function dblClickOutside(e) {
+		EmptyCLickedNodes();
+	}
+
 	let forceChart = (data, width, height, invalidation) => {
 		const types = Array.from(new Set(data.edges.map((d) => d.type)));
 		const color = d3.scaleOrdinal(types, d3.schemeCategory10);
@@ -116,13 +120,21 @@
 
 		const svg = d3
 			.create("svg")
+			.attr("width", width)
+			.attr("height", height)
 			.attr("viewBox", [-width / 2, -height / 2, width, height])
 			.style("font", "12px sans-serif")
+			.on("dblclick", dblClickOutside)
 			.on("click", clickOutside)
 			.call(d3.zoom().on("zoom", zoomed));
 
 		function zoomed(e) {
-			svg.attr( "transform", `translate(${e.transform.x},${e.transform.y}) scale(${e.transform.k})` );
+			svg.attr("viewBox", [
+				-e.transform.x - width / e.transform.k / 2,
+				-e.transform.y - height / e.transform.k / 2,
+				width / e.transform.k,
+				height / e.transform.k,
+			]);
 		}
 
 		// Per-type markers, as they don't inherit styles.
