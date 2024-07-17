@@ -17,6 +17,7 @@
     "@sveltejs/vite-plugin-svelte": "^2.0.0",
     "@tauri-apps/cli": "^1.2.2",
     "d3": "^7.8.4",
+    "jsonata": "^2.0.3",
     "svelte": "^3.54.0",
     "svelte-jsoneditor": "^0.16.1",
     "svelte-spa-router": "^3.3.0",
