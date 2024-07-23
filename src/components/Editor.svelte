@@ -5,6 +5,8 @@
 	import jsonata from "jsonata";
 	export let jsonText = "{}";
 	export let readOnly = false;
+	export let hasDel = false;
+	export let info = {};
 	let jsonTextFinal = "{}";
 
 	function Since(date, dureeMs) {
@@ -13,14 +15,35 @@
 		return (dateNow.getTime() - dateOrigin.getTime()) / dureeMs;
 	}
 
+	function handleRenderMenu(items, context) {
+		if (hasDel) {
+			const separator = {
+				separator: true,
+			};
+			const customCopyButton = {
+				onClick: () => dispatch("del", { info }),
+				text: "X",
+				title: "Delete",
+				className: "custom-del-button",
+			};
+			const space = {
+				space: true,
+			};
+			const itemsWithoutSpace = items.slice(0, items.length - 1);
+			return itemsWithoutSpace.concat([ separator, customCopyButton, space ]);
+		} else {
+			return items;
+		}
+	}
+
 	function handleChange(updatedContent, previousContent, { contentErrors }) {
 		if (!contentErrors) {
 			const content =
 				updatedContent.text !== undefined
 					? updatedContent.text
 					: JSON.stringify(updatedContent.json);
-			if (content) {
-				dispatch("change", { content });
+			if (content && content != jsonText) {
+				dispatch("change", { content, info });
 			}
 		}
 	}
@@ -52,6 +75,7 @@
 	<JSONEditor
 		content={{ text: jsonTextFinal, json: undefined }}
 		onChange={handleChange}
+		onRenderMenu={handleRenderMenu}
 		{readOnly}
 	/>
 </div>

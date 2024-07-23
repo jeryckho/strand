@@ -14,13 +14,13 @@
 	let file = "";
 
 	const routes = {
-		"/": Home,
+		"/Home": Home,
 		"/Edges": Edges,
 		"/Import": Import,
 		"/Node/:id": Node,
 		"/Edge/:source/:target": Edge,
 		"/Graph": Graph,
-		"*": Home,
+		"*": Graph,
 	};
 
 	const Start = async () => {
@@ -56,9 +56,9 @@
 	{#if $db}
 		<nav class="navbar is-light block">
 			<div class="navbar-brand">
-				<a class="navbar-item" href="#/"> Nodes </a>
-				<a class="navbar-item" href="#/Edges"> Edges </a>
 				<a class="navbar-item" href="#/Graph"> Graph </a>
+				<a class="navbar-item" href="#/Home"> Nodes </a>
+				<a class="navbar-item" href="#/Edges"> Edges </a>
 				<a class="navbar-item" href="#/Import"> Import </a>
 				<a class="navbar-item" href="#/"  on:click={Close}> Close </a>
 			</div>
@@ -89,5 +89,7 @@
 				</nav>
 			</div>
 		</div>
+	{:else}
+	... Waiting ...
 	{/if}
 </main>

@@ -2,8 +2,10 @@
 	import { onMount } from "svelte";
 	import * as d3 from "d3";
 	import { db } from "../stores/store";
+	import { info, error } from "tauri-plugin-log-api";
+	import { ask, message } from "@tauri-apps/api/dialog";
 	import Editor from "../components/Editor.svelte";
-	import { AllEdges, AllNodes, InsertNode, DeleteNode } from "../libs/queries";
+	import { AllEdges, AllNodes, UpdateNode, InsertNode, DeleteNode, InsertEdge, DeleteEdge } from "../libs/queries";
 
 	let data = { nodes: [], edges: [] };
 
@@ -13,6 +15,95 @@
 		MidEdge: {},
 		RigNode: {}
 	};
+
+	const addNode = async ({ target }) => {
+		const formData = new FormData(target);
+		let frm = {};
+		for (let [key, value] of formData) {
+			frm[key] = value;
+		}
+		target.reset();
+
+		try {
+			await $db.execute(InsertNode, [
+				JSON.stringify(frm),
+			]);
+			await start();
+			AddClickedNode(frm.name);
+		} catch (err) {
+			await error(err);
+			await ask("Arf");
+		}
+	};
+	
+	const delNode = async ({detail}) => {
+		const confirm = await ask("Are you sure ?", {
+			title: "Strand",
+			type: "warning",
+		});
+		if (confirm) {
+			try {
+				await $db.execute(DeleteNode, [detail.info.id]);
+				await start();
+				EmptyCLickedNodes();
+			} catch (err) {
+				await error(err);
+				await ask("Ouch");
+			}
+		}
+	};
+
+	const delEdge = async ({detail}) => {
+		const confirm = await ask("Are you sure ?", {
+			title: "Strand",
+			type: "warning",
+		});
+		if (confirm) {
+			try {
+				await $db.execute(DeleteEdge, [detail.info.edge.source, detail.info.edge.target]);
+				await start();
+				EmptyCLickedNodes();
+			} catch (err) {
+				await error(err);
+				await ask("Ouch");
+			}
+		}
+	};
+
+	async function handleChange({detail}) {
+		console.log(detail);
+		if (detail?.content) {
+			if (detail.info?.id) {
+				try {
+					await $db.execute(
+						UpdateNode,
+						[detail.content, detail.info.id]
+					);
+					const node = data.nodes.find(({id}) => id === detail.info?.id);
+					console.log(node);
+					node.body = detail.content;
+					node.id = JSON.parse(detail.content).name;
+					console.log(node);
+					onResize();
+				} catch (err) {
+					await error(err);
+					await ask("Ouch");
+				}
+			} else if (detail.info?.edge) {
+				try {
+					await $db.execute(
+						InsertEdge,
+						[detail.info.edge.source, detail.info.edge.target, detail.content]
+					);	
+					const edge = data.edges.find(({source, target}) => source === detail.info.edge.source && target === detail.info.edge.target);
+					edge.properties = detail.content;
+				} catch (err) {
+					await error(err);
+					await ask("Ouch");
+				}
+			}
+		}
+	}
 
 	const AddClickedNode = (id) => {
 		ClickedNodes = ([...ClickedNodes, id]).slice(-2);
@@ -126,7 +217,11 @@
 			.style("font", "12px sans-serif")
 			.on("dblclick", dblClickOutside)
 			.on("click", clickOutside)
-			.call(d3.zoom().on("zoom", zoomed));
+			.on("contextmenu", function (d) {
+				d.preventDefault();
+				svg.attr("viewBox", [-width / 2, -height / 2, width, height]);
+			})
+			// .call(d3.zoom().on("zoom", zoomed));
 
 		function zoomed(e) {
 			svg.attr("viewBox", [
@@ -210,7 +305,7 @@
 	function onResize() {
 		innerWidth = window.innerWidth;
 		innerHeight = window.innerHeight;
-		let chart = forceChart(data, innerWidth - 100, 300, null);
+		let chart = forceChart(data, innerWidth - 50, 400, null);
 		d3.select(el).selectAll("*").remove();
 		d3.select(el).append(() => chart);
 	}
@@ -242,9 +337,32 @@
 				Node &lt;{Panels.LefNode.id}&gt;
 			</p>
 			<div class="panel-block">
-				<Editor jsonText={Panels.LefNode?.body} readOnly={true} />
+				<Editor jsonText={Panels.LefNode?.body} info={{id:Panels.LefNode.id}} on:change={handleChange} hasDel={true} on:del={delNode} />
 			</div>
 		</nav>
+		{:else}
+		<div class="panel-block">
+			<form
+				method="post"
+				action="/api/node"
+				on:submit|preventDefault={addNode}
+			>
+				<div class="field has-addons">
+					<div class="control">
+						<input
+							class="input"
+							type="text"
+							placeholder="Node name"
+							name="name"
+							value=""
+						/>
+					</div>
+					<div class="control">
+						<button class="button is-info" type="submit"> Add </button>
+					</div>
+				</div>
+			</form>
+		</div>
 		{/if}
 	</div>
 	<div class="column is-third">
@@ -252,9 +370,13 @@
 		<nav class="panel">
 			<p class="panel-heading">Edge &lt;=&gt;</p>
 			<div class="panel-block">
-				<Editor jsonText={ Panels.MidEdge?.properties}  readOnly={true} />
+				<Editor jsonText={ Panels.MidEdge?.properties} info={{edge:Panels.MidEdge}} on:change={handleChange} hasDel={true} on:del={delEdge} />
 			</div>
 		</nav>
+		{:else if (Panels.RigNode?.id && Panels.LefNode?.id)}
+		<div class="box has-text-centered">
+			<button class="button">Center me</button>
+		 </div>
 		{/if}
 	</div>
 	<div class="column is-third">
@@ -264,7 +386,7 @@
 				Node &lt;{Panels.RigNode.id}&gt;
 			</p>
 			<div class="panel-block">
-				<Editor jsonText={Panels.RigNode?.body} readOnly={true} />
+				<Editor jsonText={Panels.RigNode?.body} info={{id:Panels.RigNode.id}} on:change={handleChange} hasDel={true} on:del={delNode} />
 			</div>
 		</nav>
 		{/if}
