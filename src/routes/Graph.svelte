@@ -23,16 +23,17 @@
 			frm[key] = value;
 		}
 		target.reset();
-
-		try {
-			await $db.execute(InsertNode, [
-				JSON.stringify(frm),
-			]);
-			await start();
-			AddClickedNode(frm.name);
-		} catch (err) {
-			await error(err);
-			await ask("Arf");
+		if (frm.name != "") {
+			try {
+				await $db.execute(InsertNode, [
+					JSON.stringify(frm),
+				]);
+				await start();
+				AddClickedNode(frm.name);
+			} catch (err) {
+				await error(err);
+				await ask("Arf");
+			}
 		}
 	};
 	
@@ -53,6 +54,19 @@
 		}
 	};
 
+	const addEdge = async (src, tgt) => {
+		try {
+			await $db.execute(InsertEdge,
+				[src, tgt, "{}"]
+			);
+			await start();
+			SetClickedEdge(src, tgt);
+		} catch (err) {
+			await error(err);
+			await ask("Arf");
+		}
+	};
+	
 	const delEdge = async ({detail}) => {
 		const confirm = await ask("Are you sure ?", {
 			title: "Strand",
@@ -344,14 +358,14 @@
 		<div class="panel-block">
 			<form
 				method="post"
-				action="/api/node"
+				action="/api/node" autocomplete="off"
 				on:submit|preventDefault={addNode}
 			>
 				<div class="field has-addons">
 					<div class="control">
 						<input
 							class="input"
-							type="text"
+							type="text" autocomplete="off"
 							placeholder="Node name"
 							name="name"
 							value=""
@@ -375,7 +389,9 @@
 		</nav>
 		{:else if (Panels.RigNode?.id && Panels.LefNode?.id)}
 		<div class="box has-text-centered">
-			<button class="button">Center me</button>
+			<div class="control has-text-centered">
+				<button class="button is-info" on:click={()=>addEdge(Panels.LefNode?.id, Panels.RigNode?.id)}> Add </button>
+			</div>
 		 </div>
 		{/if}
 	</div>

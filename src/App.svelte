@@ -77,7 +77,7 @@
 					<div class="panel-block">
 						<div class="field has-addons">
 							<div class="control">
-							  <input class="input" type="text" bind:value={file} placeholder="enter file path">
+							  <input class="input" type="text" bind:value={file} placeholder="enter file path" autocomplete="off">
 							</div>
 							<div class="control">
 							  <button class="button is-warning" on:click={Open}>
