@@ -6,7 +6,9 @@
 	import { ask, message } from "@tauri-apps/api/dialog";
 	import Editor from "../components/Editor.svelte";
 	import { AllEdges, AllNodes, UpdateNode, InsertNode, DeleteNode, InsertEdge, DeleteEdge } from "../libs/queries";
+	import Typeahead from "svelte-typeahead";
 
+	let targets = [];
 	let data = { nodes: [], edges: [] };
 
 	let ClickedNodes = [];
@@ -98,7 +100,6 @@
 					node.body = detail.content;
 					node.id = JSON.parse(detail.content).name;
 					console.log(node);
-					onResize();
 				} catch (err) {
 					await error(err);
 					await ask("Ouch");
@@ -128,6 +129,7 @@
 			Panels.RigNode = data.nodes.find(({id}) => id === ClickedNodes[1]);
 			Panels.MidEdge =  data.edges.find(({source, target}) => source === ClickedNodes[0] && target === ClickedNodes[1]) ?? {};
 		}
+		focusOn(id);
 	}
 	const SetClickedEdge = (src, tgt) =>{
 		ClickedNodes = [src, tgt];
@@ -153,7 +155,8 @@
 		);
 		const nodes = await $db.select(AllNodes);
 		data = { nodes, edges };
-		onResize();
+		targets = nodes.map(({id})=>id);
+		Draw();
 	};
 
 	let drag = (simulation) => {
@@ -272,6 +275,7 @@
 			.selectAll("g")
 			.data(nodes)
 			.join("g")
+			.attr("id", (d) => "N"+d.id)
 			.on("click", clickNode)
 			.call(drag(simulation));
 
@@ -304,20 +308,27 @@
 
 	let el;
 
-	let innerWidth;
-	let innerHeight;
-
-	function onResize() {
-		innerWidth = window.innerWidth;
-		innerHeight = window.innerHeight;
-		let chart = forceChart(data, (innerWidth - 50), 400, null);
+	function Draw() {
+		let chart = forceChart(data, (window.innerWidth - 50), 400, null);
 		d3.select(el).selectAll("*").remove();
 		d3.select(el).append(() => chart);
 	}
 
-	function zoomOf(f) {
+	function setViewPort() {
+		const width = window.innerWidth - 50;
+		const height = 400;
+		d3.select(el).select("svg").attr("viewBox", [-(width / $zoom) / 2, -(height / $zoom) / 2, width / $zoom, height / $zoom]);
+	}
+
+	function zoomOn(f) {
 		zoom.set($zoom*f);
-		onResize();
+		setViewPort();
+	}
+
+	function focusOn(id) {
+		const g = d3.select(el).select("#N"+id).node();
+		const { e,f } = g.transform.baseVal.consolidate().matrix
+		console.log(JSON.stringify({e,f}));
 	}
 
 	onMount(() => {
@@ -326,16 +337,34 @@
 		} else {
 			setTimeout(start, 250);
 		}
-		window.addEventListener("resize", onResize);
-		return () => window.removeEventListener("resize", onResize);
+		window.addEventListener("resize", setViewPort);
+		return () => window.removeEventListener("resize", setViewPort);
 	});
 </script>
 
 <div class="columns">
 	<div class="column is-full">
 		<nav class="panel">
-			<p class="panel-heading">Graph <button on:click={()=>zoomOf(0.9)} class="button is-primary is-small is-responsive is-rounded is-pulled-right"><i class="fa fa-arrow-right"/></button><button on:click={()=>zoomOf(1.1)} class="button is-primary is-small is-responsive is-rounded is-pulled-right"><i class="fa fa-arrow-left"/></button></p>
+			<p class="panel-heading">Graph <button on:click={()=>zoomOn(0.8)} class="button is-primary is-small is-responsive is-rounded is-pulled-right"><i class="fa fa-search-minus"/></button><button on:click={()=>zoomOn(1.25)} class="button is-primary is-small is-responsive is-rounded is-pulled-right"><i class="fa fa-search-plus"/></button></p>
 			<div bind:this={el} class="panel-block" />
+			<div class="panel-block">
+				<p class="control has-icons-left"  class:is-loading={false}>
+					<Typeahead
+						class="input is-warning"
+						name="name"
+						label="Nodes"
+						placeholder="Search"
+						hideLabel
+						showDropdownOnFocus
+						inputAfterSelect="clear"
+						data={targets}
+						on:select={({ detail }) => AddClickedNode(detail.selected)}
+					/>
+					<span class="icon is-left">
+						<i class="fa fa-search" aria-hidden="true"></i>
+					</span>
+				</p>
+			</div>
 		</nav>
 	</div>
 </div>
