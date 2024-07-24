@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from "svelte";
 	import * as d3 from "d3";
-	import { db } from "../stores/store";
+	import { db, zoom } from "../stores/store";
 	import { info, error } from "tauri-plugin-log-api";
 	import { ask, message } from "@tauri-apps/api/dialog";
 	import Editor from "../components/Editor.svelte";
@@ -227,24 +227,15 @@
 			.create("svg")
 			.attr("width", width)
 			.attr("height", height)
-			.attr("viewBox", [-width / 2, -height / 2, width, height])
+			.attr("viewBox", [-(width / $zoom) / 2, -(height / $zoom) / 2, width / $zoom, height / $zoom])
 			.style("font", "12px sans-serif")
 			.on("dblclick", dblClickOutside)
 			.on("click", clickOutside)
 			.on("contextmenu", function (d) {
 				d.preventDefault();
-				svg.attr("viewBox", [-width / 2, -height / 2, width, height]);
+				zoom.set(1);
+				svg.attr("viewBox", [-(width / $zoom) / 2, -(height / $zoom) / 2, width / $zoom, height / $zoom]);
 			})
-			// .call(d3.zoom().on("zoom", zoomed));
-
-		function zoomed(e) {
-			svg.attr("viewBox", [
-				-e.transform.x - width / e.transform.k / 2,
-				-e.transform.y - height / e.transform.k / 2,
-				width / e.transform.k,
-				height / e.transform.k,
-			]);
-		}
 
 		// Per-type markers, as they don't inherit styles.
 		svg.append("defs")
@@ -319,9 +310,14 @@
 	function onResize() {
 		innerWidth = window.innerWidth;
 		innerHeight = window.innerHeight;
-		let chart = forceChart(data, innerWidth - 50, 400, null);
+		let chart = forceChart(data, (innerWidth - 50), 400, null);
 		d3.select(el).selectAll("*").remove();
 		d3.select(el).append(() => chart);
+	}
+
+	function zoomOf(f) {
+		zoom.set($zoom*f);
+		onResize();
 	}
 
 	onMount(() => {
@@ -338,7 +334,7 @@
 <div class="columns">
 	<div class="column is-full">
 		<nav class="panel">
-			<p class="panel-heading">Graph</p>
+			<p class="panel-heading">Graph <button on:click={()=>zoomOf(0.9)} class="button is-primary is-small is-responsive is-rounded is-pulled-right"><i class="fa fa-arrow-right"/></button><button on:click={()=>zoomOf(1.1)} class="button is-primary is-small is-responsive is-rounded is-pulled-right"><i class="fa fa-arrow-left"/></button></p>
 			<div bind:this={el} class="panel-block" />
 		</nav>
 	</div>

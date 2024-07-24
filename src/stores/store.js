@@ -2,6 +2,7 @@ import { writable } from 'svelte/store';
 
 export const db = writable(null);
 export const inited = writable(false);
+export const zoom = writable(1);
 
 export const File = writable("strand");
 const Handle = (o) => {

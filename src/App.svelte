@@ -1,4 +1,5 @@
 <script>
+	import { appWindow } from '@tauri-apps/api/window';
 	import { error } from "tauri-plugin-log-api";
 	import Database from "tauri-plugin-sql-api";
 	import Router from "svelte-spa-router";
@@ -28,9 +29,11 @@
 			const path = $File;
 			db.set(await Database.load(`sqlite://${path}`));
 			await $db.execute(Schema);
-			inited.set(true);
+			await appWindow.setTitle(`Strand (${$File})`);
 		} catch (err) {
 			error(err);
+		} finally {
+			inited.set(true);
 		}
 	};
 
@@ -39,6 +42,7 @@
 			db.set(await Database.load(`sqlite://${file}`));
 			await $db.execute(Schema);
 			File.set(file);
+			await appWindow.setTitle(`Strand (${$File})`);
 		} catch (err) {
 			error(err);
 		}
