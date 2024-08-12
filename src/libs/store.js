@@ -1,10 +1,11 @@
+// @ts-nocheck
 import { writable } from 'svelte/store';
+import { GraphDb } from './graphdb';
 
-export const db = writable(null);
-export const inited = writable(false);
+export const db = writable(new GraphDb());
 export const zoom = writable(1);
+export const File = writable("C:/tmp/Bob.db");
 
-export const File = writable("strand");
 const Handle = (o) => {
 	for (const [key, value] of Object.entries(o)) {
 		const item = localStorage.getItem(key);
