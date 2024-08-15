@@ -12,35 +12,18 @@ fn main() {
         .add_item(CustomMenuItem::new("new".to_string(), "Nouveau"))
         .add_item(CustomMenuItem::new("open".to_string(), "Ouvrir"))
         .add_native_item(tauri::MenuItem::Separator)
-        .add_item(CustomMenuItem::new("vider".to_string(), "Vider"))
+        .add_item(CustomMenuItem::new("clean".to_string(), "Vider"))
         .add_item(CustomMenuItem::new("import".to_string(), "Importer"))
         .add_item(CustomMenuItem::new("export".to_string(), "Exporter"))
         .add_native_item(tauri::MenuItem::Separator)
         .add_item(CustomMenuItem::new("quit".to_string(), "Quitter")));  
 
     tauri::Builder::default()
-        .menu(Menu::new().add_submenu(submenu))
+        .menu(Menu::new().add_submenu(submenu).add_item(CustomMenuItem::new("todo".to_string(), "?")))
         .on_menu_event(|event| {
             match event.menu_item_id() {
-                "new" => {
-                    event.window().emit("backend", Payload { message: "new".to_string() }).unwrap();
-                }
-                "open" => {
-                    event.window().emit("backend", Payload { message: "open".to_string() }).unwrap();
-                }
-                "vider" => {
-                    event.window().emit("backend", Payload { message: "clean".to_string() }).unwrap();
-                }
-                "export" => {
-                    event.window().emit("backend", Payload { message: "export".to_string() }).unwrap();
-                }
-                "import" => {
-                    event.window().emit("backend", Payload { message: "import".to_string() }).unwrap();
-                }
-                "quit" => {
-                    event.window().close().unwrap();
-                }
-                _ => {}
+                "quit" => { event.window().close().unwrap(); }
+                id => { event.window().emit("backend", Payload { message: id.to_string() }).unwrap(); }
             }
         })
         .plugin(tauri_plugin_sql::Builder::default().build())

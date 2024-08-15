@@ -429,12 +429,12 @@
 	 * @param {string} id
 	 */
 	function focusOn(id) {
-		const g = d3
-			.select(el)
-			.select("#N" + id)
-			.node();
-		const { e, f } = g.transform.baseVal.consolidate().matrix;
-		console.log(JSON.stringify({ e, f }));
+		// const g = d3
+		// 	.select(el)
+		// 	.select("#N" + id)
+		// 	.node();
+		// const { e, f } = g.transform.baseVal.consolidate().matrix;
+		// console.log(JSON.stringify({ e, f }));
 	}
 
 	// @ts-ignore
