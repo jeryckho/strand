@@ -1,23 +1,33 @@
 import Database from "tauri-plugin-sql-api";
 
 const Schema = `CREATE TABLE IF NOT EXISTS nodes (
-	body TEXT,
-	id   TEXT GENERATED ALWAYS AS (json_extract(body, '$.name')) VIRTUAL NOT NULL UNIQUE
+    body TEXT,
+    alt  TEXT DEFAULT '{}',
+    id   TEXT GENERATED ALWAYS AS (json_extract(body, '$.name')) VIRTUAL NOT NULL UNIQUE
 );
 CREATE INDEX IF NOT EXISTS id_idx ON nodes(id);
 
 CREATE TABLE IF NOT EXISTS edges (
-	source     TEXT,
-	target     TEXT,
-	properties TEXT,
-	UNIQUE(source, target) ON CONFLICT REPLACE,
-	FOREIGN KEY(source) REFERENCES nodes(id) ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY(target) REFERENCES nodes(id) ON DELETE CASCADE ON UPDATE CASCADE
+    source     TEXT,
+    target     TEXT,
+    properties TEXT,
+    UNIQUE(source, target) ON CONFLICT REPLACE,
+    FOREIGN KEY(source) REFERENCES nodes(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(target) REFERENCES nodes(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 CREATE INDEX IF NOT EXISTS source_idx ON edges(source);
 CREATE INDEX IF NOT EXISTS target_idx ON edges(target);`
 
 const Specific = "";
+
+const jFrom = (JsOStr) => JsOStr ? (typeof JsOStr === "string" ? JsOStr : JSON.stringify(JsOStr)) : undefined;
+const Query = ( /** @type {string} */ k, /** @type {string} */ s, o = {s:[], p: []} ) => {
+    if (k) {
+        o.s.push(s);
+        o.p.push(k);
+    }
+    return o;
+}
 
 export class GraphDb {
     constructor({ path = "test.db" } = {}) {
@@ -93,7 +103,7 @@ export class GraphDb {
      * @param {{ source:string, target:string, properties:string|any }} data
     */
     async InsertEdge({ source, target, properties }) {
-        const json = (typeof properties === "string") ? properties : JSON.stringify(properties);
+        const json = jFrom(properties);
         if (this.db && source && target && json)
             await this.db.execute(
                 "INSERT INTO edges VALUES(?, ?, json(?))",
@@ -129,7 +139,7 @@ export class GraphDb {
     /**
      * AllNodes
      * Find every node
-     * @returns {Promise<{id:string, body:string}[]>}
+     * @returns {Promise<{id:string, body:string, alt?:string}[]>}
     */
     async AllNodes() {
         if (this.db)
@@ -141,42 +151,42 @@ export class GraphDb {
      * FindNode
      * Find particular node
      * @param {{ id:string }} data
-     * @returns {Promise<{id:string, body:string}[]>}
+     * @returns {Promise<{id:string, body:string, alt?:string}[]>}
     */
     async FindNode({ id }) {
         if (this.db && id)
-            return await this.db.select("SELECT id, body FROM nodes WHERE id LIKE ?", [id])
+            return await this.db.select("SELECT * FROM nodes WHERE id LIKE ?", [id])
         else throw "Can't select"
     }
 
     /**
      * InsertNode
      * Insert particular node
-     * @param {{ body:string|any }} data
+     * @param {{ body:string|any, alt?:string|any }} data
     */
-    async InsertNode({ body }) {
-        const json = (typeof body === "string") ? body : JSON.stringify(body);
+    async InsertNode({ body, alt }) {
+        const json = jFrom(body);
+        const sAlt = jFrom(alt);
         if (this.db && json)
-            await this.db.execute(
-                "INSERT INTO nodes VALUES(json(?))",
-                [json]
-            )
+            sAlt ? await this.db.execute("INSERT INTO nodes (body, alt) VALUES(json(?), ?)", [json, sAlt])
+                : await this.db.execute("INSERT INTO nodes (body) VALUES(json(?))", [json]);
         else throw "Can't execute"
     }
 
     /**
      * UpdateNode
      * Update particular node
-     * @param {{ id:string, body:string|any }} data
+     * @param {{ id:string, body?:string|any, alt?:string|any }} data
     */
-    async UpdateNode({ id, body }) {
-        const json = (typeof body === "string") ? body : JSON.stringify(body);
-        if (this.db && id && json)
-            await this.db.execute(
-                "UPDATE nodes SET body = json(?) WHERE id = ?",
-                [json, id]
-            )
-        else throw "Can't execute"
+    async UpdateNode({ id, body, alt }) {
+        const json = jFrom(body);
+        const sAlt = jFrom(alt);
+        if (this.db && id && (json || sAlt)) {
+            let Q = Query(json, "body = json(?)");
+            Q = Query(sAlt, "alt = ?", Q);
+            Q.p.push(id);
+            await this.db.execute(`UPDATE nodes SET ${Q.s.join(", ")} WHERE id = ?`, Q.p);
+        } else throw "Can't execute"
     }
 
     /**

@@ -167,14 +167,12 @@
 	};
 
 	const start = async () => {
-		const /** @type {any} */ edges = (await $db.AllEdge()).map(
+		const /** @type {{Promise<{source:string, target:string, properties:string}[]>}} */ edges = (await $db.AllEdge()).map(
 				({ source, target, properties }) => ({
 					source,
 					target,
 					properties,
-					type: Object.keys(JSON.parse(properties)).length.toString(
-						10,
-					),
+					type: Object.keys(JSON.parse(properties)).length.toString(10),
 				}),
 			);
 		const /** @type {any} */ nodes = await $db.AllNodes();
@@ -503,7 +501,7 @@
 						jsonText={Panels.LefNode?.body}
 						info={{ id: Panels.LefNode.id }}
 						on:change={handleChange}
-						hasDel={true}
+						hasCol={true} hasDel={true}
 						on:del={delNode}
 					/>
 				</div>
@@ -576,7 +574,7 @@
 						jsonText={Panels.RigNode?.body}
 						info={{ id: Panels.RigNode.id }}
 						on:change={handleChange}
-						hasDel={true}
+						hasCol={true} hasDel={true}
 						on:del={delNode}
 					/>
 				</div>

@@ -1,7 +1,7 @@
 {
   "name": "strand",
   "private": true,
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "",
   "type": "module",
   "scripts": {
@@ -19,6 +19,7 @@
     "@tauri-apps/api": "^1.6.0"
   },
   "devDependencies": {
+    "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@mdi/font": "^7.4.47",
     "@sveltejs/adapter-static": "^3.0.1",
     "@sveltejs/kit": "^2.0.0",

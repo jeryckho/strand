@@ -2,10 +2,12 @@
 	import { createEventDispatcher } from "svelte";
 	const dispatch = createEventDispatcher();
 	import { JSONEditor } from "svelte-jsoneditor";
+	import { faTrash, faPalette } from "@fortawesome/free-solid-svg-icons";
 	import jsonata from "jsonata";
 	export let jsonText = "{}";
 	export let readOnly = false;
 	export let hasDel = false;
+	export let hasCol = false;
 	export let info = {};
 	let jsonTextFinal = "{}";
 
@@ -15,25 +17,46 @@
 		return (dateNow.getTime() - dateOrigin.getTime()) / dureeMs;
 	}
 
-	function handleRenderMenu(items, context) {
-		if (hasDel) {
-			const separator = {
+	function addColor(items) {
+		const itemsWithoutSpace = items.slice(0, items.length - 1);
+		return itemsWithoutSpace.concat([
+			{
 				separator: true,
-			};
-			const customCopyButton = {
+			},
+			{
+				onClick: () => dispatch("col", { info }),
+				icon: faPalette,
+				title: "Color",
+				className: "custom-col-button",
+			},
+			{
+				space: true,
+			},
+		]);
+	}
+
+	function addDel(items) {
+		const itemsWithoutSpace = items.slice(0, items.length - 1);
+		return itemsWithoutSpace.concat([
+			{
+				separator: true,
+			},
+			{
 				onClick: () => dispatch("del", { info }),
-				text: "X",
+				icon: faTrash,
 				title: "Delete",
 				className: "custom-del-button",
-			};
-			const space = {
+			},
+			{
 				space: true,
-			};
-			const itemsWithoutSpace = items.slice(0, items.length - 1);
-			return itemsWithoutSpace.concat([ separator, customCopyButton, space ]);
-		} else {
-			return items;
-		}
+			},
+		]);
+	}
+
+	function handleRenderMenu(items, context) {
+		if (hasCol) { items = addColor(items); }
+		if (hasDel) { items = addDel(items); }
+		return items;
 	}
 
 	function handleChange(updatedContent, previousContent, { contentErrors }) {
