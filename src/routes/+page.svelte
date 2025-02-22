@@ -49,6 +49,7 @@
 		});
 		if (confirm) {
 			try {
+				await $db.DeleteLinkedEdges({ id: detail.info.id });
 				await $db.DeleteNode({ id: detail.info.id });
 				await start();
 				EmptyCLickedNodes();

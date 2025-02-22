@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "strand",
-    "version": "0.5.2"
+    "version": "0.5.3"
   },
   "tauri": {
     "allowlist": {
@@ -71,6 +71,9 @@
         "startDragging": false,
         "unmaximize": false,
         "unminimize": false
+      },
+      "globalShortcut": {
+        "all": true
       }
     },
     "windows": [

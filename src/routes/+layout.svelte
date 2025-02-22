@@ -10,6 +10,7 @@
     import { readTextFile, writeTextFile } from "@tauri-apps/api/fs";
     import { open, save, ask } from "@tauri-apps/api/dialog";
     import { appWindow } from "@tauri-apps/api/window";
+    import { register } from '@tauri-apps/api/globalShortcut';
 
     const Goto = async (dest, waiting = true) => {
         if (waiting) await goto("/waiting");
@@ -19,6 +20,7 @@
     // @ts-ignore
     onMount(async () => {
         appWindow.setTitle(`Strand (${$File})`);
+        await register('CommandOrControl+Shift+F7', () => { Goto("/projects"); });
         const unlisten = await listen("backend", async (event) => {
             try {
                 switch (event.payload.message) {
